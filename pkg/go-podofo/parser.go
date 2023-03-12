@@ -414,7 +414,7 @@ func (p *Parser) findTokenBackward(r Reader, token string, bytesRange int64, sea
 	return err
 }
 
-func (p *Parser) mergeTrailer(trailer *Dictionary) error {
+func (p *Parser) mergeTrailer(trailer *Dictionary) {
 	if p.trailer == nil {
 		// TODO: create trailer
 	}
@@ -426,7 +426,6 @@ func (p *Parser) mergeTrailer(trailer *Dictionary) error {
 			p.trailer.AddKey(key, obj)
 		}
 	}
-	panic("not implemented") // TODO: implement me
 }
 
 func (p *Parser) findXRef(r Reader) (offset int64, err error) {
