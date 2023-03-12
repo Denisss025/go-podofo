@@ -1,19 +1,21 @@
 package podofo
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 
+	"github.com/denisss025/go-podofo/internal/pdf"
 	"github.com/denisss025/go-podofo/internal/set"
 )
 
 const (
-	versionLen       = 3
-	magicLen         = 8
-	xrefEntrySzie    = 20
-	xrefBuf          = 512
-	xrefSessionCount = 512
+	versionLen          = 3
+	magicLen            = 8
+	xrefEntrySize       = 20
+	xrefBuf             = 512
+	maxXRefSessionCount = 512
 )
 
 type Reader interface {
@@ -93,9 +95,7 @@ func Parse(
 }
 
 // IsEncrypted returns true if the PDF file is encrypted.
-func (p *Parser) IsEncrypted() bool {
-	panic("not implemented") // TODO: implement me
-}
+func (p *Parser) IsEncrypted() bool { return p.encrypt != nil }
 
 // TakeEncrypt gives the encryption object from the
 // parser. The internal handle will be set to nil and
@@ -103,18 +103,17 @@ func (p *Parser) IsEncrypted() bool {
 //
 // Only call this if yout need access to the encryption object.
 func (p *Parser) TakeEncrypt() *Encrypt {
-	panic("not implemented") // TODO: implement me
+	encrypt := p.encrypt
+	p.encrypt = nil
+
+	return encrypt
 }
 
 // GetEncrypt gives the encryption object from the parser.
-func (p *Parser) GetEncrypt() *Encrypt {
-	panic("not implemented") // TODO: implement me
-}
+func (p *Parser) GetEncrypt() *Encrypt { return p.encrypt }
 
 // Trailer returns the trailer object of the PDF file.
-func (p *Parser) Trailer() Object {
-	panic("not implemented") // TODO: implement me
-}
+func (p *Parser) Trailer() Object { return p.trailer }
 
 // Password retuns the PDF file password.
 func (p *Parser) Password() string { return p.password }
@@ -190,15 +189,134 @@ func (p *Parser) readDocumentStructure(r Reader) (err error) {
 	return nil
 }
 
-func (p *Parser) readXRefContents(r Reader, offser int64, atEnd bool) error {
-	panic("not implemented") // TODO: implement me
+func (p *Parser) readXRefContents(r Reader, offset int64, atEnd bool) (err error) {
+	var firstObject, objectCount int64
+
+	if p.visitedXRefOffsets.Contains(offset) {
+		return fmt.Errorf("read xref contents: %w: cycle in xref structure: offset %d already visited", ErrInvalidXRef, offset)
+	}
+
+	p.visitedXRefOffsets.Put(offset)
+
+	currentPosition, _ := r.Seek(0, io.SeekCurrent)
+	fileSize, _ := r.Seek(0, io.SeekEnd)
+	_, _ = r.Seek(currentPosition, io.SeekStart)
+
+	if offset > fileSize {
+		if _, err = p.findXRef(r); err != nil {
+			return fmt.Errorf("read xref contents: %w", err)
+		}
+
+		offset, _ = r.Seek(0, io.SeekCurrent)
+		p.tokenizer.buffer = pdf.ResizeSlice(p.tokenizer.buffer, xrefBuf*4)
+
+		err = p.findTokenBackward(r, "xref", int64(len(p.tokenizer.buffer)), offset)
+		if err != nil {
+			return fmt.Errorf("read xref contents: %w", err)
+		}
+
+		p.tokenizer.buffer = p.tokenizer.buffer[:xrefBuf]
+		offset, _ = r.Seek(0, io.SeekCurrent)
+		p.xrefOffset = offset
+
+	} else {
+		_, _ = r.Seek(offset, io.SeekStart)
+	}
+
+	token, err := p.tokenizer.TryReadNextToken(r)
+	if err != nil {
+		return fmt.Errorf("read xref contents: read next token: %w", ErrNoXRef)
+	}
+
+	if string(token) != "xref" {
+		if p.pdfVersion < PDFVersion13 {
+			return fmt.Errorf("read xref contents: %w", ErrNoXRef)
+		}
+
+		p.hasXrefStream = true
+
+		if err = p.readXRefStreamContents(r, offset, atEnd); err != nil {
+			err = fmt.Errorf("read xref contents: %w", err)
+		}
+
+		return err
+	}
+
+	var xrefSectionCount int
+
+	for {
+		if xrefSectionCount == maxXRefSessionCount {
+			return fmt.Errorf("read xref contents: %w", ErrNoEOFToken)
+		}
+
+		token, err := p.tokenizer.TryReadNextToken(r)
+		if err != nil {
+			return fmt.Errorf("read xref contents: %w", ErrNoXRef)
+		}
+
+		if string(token) == "trailer" {
+			break
+		}
+
+		firstObject, err = NewTokenizer().ReadNextNumber(r)
+		if err != nil {
+			if errors.Is(err, ErrNoNumber) ||
+				errors.Is(err, ErrInvalidXRef) ||
+				errors.Is(err, ErrUnexpectedEOF) {
+				break
+			}
+
+			return fmt.Errorf("read xref contents: %w", err)
+		}
+
+		objectCount, err = NewTokenizer().ReadNextNumber(r)
+		if err != nil {
+			if errors.Is(err, ErrNoNumber) ||
+				errors.Is(err, ErrInvalidXRef) ||
+				errors.Is(err, ErrUnexpectedEOF) {
+				break
+			}
+
+			return fmt.Errorf("read xref contents: %w", err)
+		}
+
+		if atEnd {
+			_, err = r.Seek(objectCount*xrefEntrySize, io.SeekStart)
+			if err != nil {
+				return fmt.Errorf("read xref contents: %w", err)
+			}
+		} else {
+			err = p.readXRefSubsection(r, firstObject, objectCount)
+			if err != nil {
+				if errors.Is(err, ErrNoNumber) ||
+					errors.Is(err, ErrInvalidXRef) ||
+					errors.Is(err, ErrUnexpectedEOF) {
+					break
+				}
+
+				return fmt.Errorf("read xref contents: %w", err)
+			}
+		}
+	}
+
+	if err = p.readNextTrailer(r); err != nil {
+		if !errors.Is(err, ErrNoTrailer) {
+			return fmt.Errorf("read xref contents: %w", err)
+		}
+	}
+
+	return nil
 }
 
-func (p *Parser) readXRefSubsection(r Reader) (firstObject int64, objectCount int64, err error) {
+func (p *Parser) readXRefSubsection(r Reader, firstObject int64, objectCount int64) (err error) {
 	panic("not implemented") // TODO: implement me
 }
 
 func (p *Parser) readXRefStreamContents(r Reader, offser int64, trailerOnly bool) error {
+	panic("not implemented") // TODO: implement me
+}
+
+func (p *Parser) readNextTrailer(r Reader) error {
 	panic("not implemented") // TODO: implement me
 }
 
