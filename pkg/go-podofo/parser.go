@@ -429,7 +429,36 @@ func (p *Parser) mergeTrailer(trailer *Dictionary) {
 }
 
 func (p *Parser) findXRef(r Reader) (offset int64, err error) {
-	panic("not implemented") // TODO: implement me
+	err = p.findTokenBackward(r, "startxref", xrefBuf, p.
+		lastEOFOffset)
+	if err != nil {
+		return -1, fmt.Errorf("find xref: %w", err)
+	}
+
+	token, err := p.tokenizer.TryReadNextToken(r)
+	if err != nil || string(token) != "startxref" {
+		if !p.strictParsing {
+			err = p.findTokenBackward(r, "startref", xrefBuf, p.
+				lastEOFOffset)
+			if err != nil {
+				return -1, fmt.Errorf("find xref: %w", err)
+			}
+
+			token, err = p.tokenizer.TryReadNextToken(r)
+			if err != nil || string(token) != "startref" {
+				return -1, errors.Join(fmt.Errorf("find xref: %w", ErrNoXRef), err)
+			}
+		} else {
+			return -1, errors.Join(fmt.Errorf("find xref: %w", ErrNoXRef), err)
+		}
+	}
+
+	offset, err = p.tokenizer.ReadNextNumber(r)
+	if err != nil {
+		err = fmt.Errorf("find xref: %w", err)
+	}
+
+	return offset, err
 }
 
 func (p *Parser) readObjectsInternal(r Reader) error {
