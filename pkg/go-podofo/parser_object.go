@@ -1,7 +1,7 @@
 package podofo
 
 type ParserObject struct {
-	Object
+	*Dictionary
 	Encrypt Encrypt
 }
 
@@ -23,13 +23,13 @@ func NewParserObject(r Reader, offset int64, options ...ParserObjectOption) (*Pa
 	panic("not implemented") // TODO: implement me
 }
 
-func (obj *ParserObject) IsDictionary() bool {
-	panic("not implemented") // TODO: implement me
-}
+// func (obj *ParserObject) IsDictionary() bool {
+// 	panic("not implemented") // TODO: implement me
+// }
 
-func (obj *ParserObject) Dictionary() *Dictionary {
-	panic("not implemented") // TODO: implement me
-}
+// func (obj *ParserObject) Dictionary() *Dictionary {
+// 	panic("not implemented") // TODO: implement me
+// }
 
 func (obj *ParserObject) Parse() error {
 	panic("not implemented") // TODO: implement me

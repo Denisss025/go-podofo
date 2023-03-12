@@ -39,6 +39,7 @@ var (
 	ErrInvalidPassword           = errors.New("invalid password")
 	ErrInvalidFontData           = errors.New("invalid font data")
 	ErrInvalidContentStream      = errors.New("invalid content stream")
+	ErrUnsupportedVersion        = errors.New("unsupported pdf version")
 	ErrUnsupportedFilter         = errors.New("unsupported filter")
 	ErrUnsupportedFontFormat     = errors.New("unsupported font format")
 	ErrUnsupportedImageFormat    = errors.New("unsupported image format")

@@ -21,32 +21,6 @@ type CIDToGIDMap []struct {
 	CID, GID uint
 }
 
-// PDFVersion is an enumeration for supported PDF versions.
-type PDFVersion uint8
-
-const (
-	// PDFVersionUnknown unknown PDF file version.
-	PDFVersionUnknown PDFVersion = 0
-	// PDFVersion10 PDF 1.0.
-	PDFVersion10 PDFVersion = 10 + iota
-	// PDFVersion11 PDF 1.1.
-	PDFVersion11
-	// PDFVersion12 PDF 1.2.
-	PDFVersion12
-	// PDFVersion13 PDF 1.3.
-	PDFVersion13
-	// PDFVersion14 PDF 1.4.
-	PDFVersion14
-	// PDFVersion15 PDF 1.5.
-	PDFVersion15
-	// PDFVersion16 PDF 1.6.
-	PDFVersion16
-	// PDFVersion17 PDF 1.7.
-	PDFVersion17
-	// PDFVersion20 PDF 2.0
-	PDFVersion20 PDFVersion = 20
-)
-
 type PDFALevel uint8
 
 const (

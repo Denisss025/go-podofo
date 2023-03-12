@@ -175,8 +175,8 @@ func (p *Parser) readDocumentStructure(r Reader) (err error) {
 		return fmt.Errorf("read document structure: %w", err)
 	}
 
-	if p.trailer != nil && p.trailer.IsDictionary() {
-		entriesCount := FindKey[int64](p.trailer.Object.(*Dictionary), NameKeySize, -1)
+	if p.trailer != nil && p.trailer.Dictionary != nil {
+		entriesCount := FindKey[int64](p.trailer.Dictionary, NameKeySize, -1)
 
 		if entriesCount >= 0 && len(p.entries) > int(entriesCount) {
 			// Total number of xref entries to read is greater than the /Size
@@ -313,7 +313,12 @@ func (p *Parser) readXRefSubsection(r Reader, firstObject int64, objectCount int
 	panic("not implemented") // TODO: implement me
 }
 
-func (p *Parser) readXRefStreamContents(r Reader, offser int64, trailerOnly bool) error {
+func (p *Parser) readXRefStreamContents(r Reader, offset int64, trailerOnly bool) error {
+	_, err := r.Seek(offset, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("read xref stream contents: %w", err)
+	}
+
 	panic("not implemented") // TODO: implement me
 }
 
@@ -322,11 +327,11 @@ func (p *Parser) readNextTrailer(r Reader) error {
 }
 
 func (p *Parser) readObjects(r Reader) (err error) {
-	if p.trailer == nil {
+	if p.trailer == nil || p.trailer.Dictionary == nil {
 		return fmt.Errorf("read objects: %w", ErrNoTrailer)
 	}
 
-	encrypt := p.trailer.Dictionary().Key(NameKeyEncrypt)
+	encrypt := p.trailer.Dictionary.Key(NameKeyEncrypt)
 	if encrypt != nil && encrypt.Kind() != ObjectKindNull {
 		p.encrypt, err = EncryptFromObject(encrypt)
 		if err != nil {
@@ -370,9 +375,9 @@ func (p *Parser) isPDFFile(r Reader) (ok bool, err error) {
 	}
 
 	p.magicOffset, _ = r.Seek(0, io.SeekCurrent)
-	p.pdfVersion = getPDFVersion(string(buf[:versionLen]))
+	p.pdfVersion = PDFVersion(buf[:versionLen])
 
-	return p.pdfVersion == PDFVersionUnknown, nil
+	return p.pdfVersion.Validate() == nil, nil
 }
 
 func (p *Parser) findTokenBackward(r Reader, token string, bytesRange int64, searchEnd int64) error {
@@ -409,7 +414,8 @@ func (p *Parser) findTokenBackward(r Reader, token string, bytesRange int64, sea
 	return err
 }
 
-func (p *Parser) mergeTrailer(trailer Object) error {
+func (p *Parser) mergeTrailer(trailer *Dictionary) error {
+
 	panic("not implemented") // TODO: implement me
 }
 
@@ -438,8 +444,8 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 
 					obj.Encrypt = *p.encrypt
 
-					if p.encrypt != nil && obj.IsDictionary() {
-						typeObj := obj.Object.(*Dictionary).Key(NameKeyType)
+					if p.encrypt != nil && obj.Dictionary != nil {
+						typeObj := obj.Dictionary.Key(NameKeyType)
 
 						name, ok := typeObj.(Name)
 						if ok && name == NameXRef {
@@ -528,7 +534,7 @@ func (p *Parser) reset() {
 }
 
 func (p *Parser) documentID() (String, error) {
-	id := p.trailer.Dictionary().Key(NameKeyID)
+	id := p.trailer.Dictionary.Key(NameKeyID)
 	if id == nil {
 		return "", fmt.Errorf("get document ID: not found in trailer: %w", ErrInvalidEncryptionDict)
 	}
@@ -578,35 +584,15 @@ func (p *Parser) parseEncrypt(r Reader, obj Object) (err error) {
 		return fmt.Errorf("parse encrypt: %w", ErrInvalidEncryptionDict)
 	}
 
-	isAuthenticated := p.encrypt.Authenticate(p.password, p.documentID())
+	documentID, err := p.documentID()
+	if err != nil {
+		return fmt.Errorf("parse encrypt: %w", err)
+	}
+
+	isAuthenticated := p.encrypt.Authenticate(p.password, documentID)
 	if !isAuthenticated {
 		return fmt.Errorf("parse encrypt: auth: %w", ErrInvalidPassword)
 	}
 
 	return err
-}
-
-func getPDFVersion(version string) (ver PDFVersion) {
-	switch version {
-	case "1.0":
-		ver = PDFVersion10
-	case "1.1":
-		ver = PDFVersion11
-	case "1.2":
-		ver = PDFVersion12
-	case "1.3":
-		ver = PDFVersion13
-	case "1.4":
-		ver = PDFVersion14
-	case "1.5":
-		ver = PDFVersion15
-	case "1.6":
-		ver = PDFVersion16
-	case "1.7":
-		ver = PDFVersion17
-	case "2.0":
-		ver = PDFVersion20
-	}
-
-	return ver
 }
