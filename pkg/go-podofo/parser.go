@@ -176,7 +176,7 @@ func (p *Parser) readDocumentStructure(r Reader) (err error) {
 	}
 
 	if p.trailer != nil && p.trailer.Dictionary != nil {
-		entriesCount := FindKey[int64](p.trailer.Dictionary, NameKeySize, -1)
+		entriesCount := p.trailer.Dictionary.Int(KeySize, -1)
 
 		if entriesCount >= 0 && len(p.entries) > int(entriesCount) {
 			// Total number of xref entries to read is greater than the /Size
@@ -331,7 +331,7 @@ func (p *Parser) readObjects(r Reader) (err error) {
 		return fmt.Errorf("read objects: %w", ErrNoTrailer)
 	}
 
-	encrypt := p.trailer.Dictionary.Key(NameKeyEncrypt)
+	encrypt := p.trailer.Dictionary.Key(KeyEncrypt)
 	if encrypt != nil && encrypt.Kind() != ObjectKindNull {
 		p.encrypt, err = EncryptFromObject(encrypt)
 		if err != nil {
@@ -415,7 +415,17 @@ func (p *Parser) findTokenBackward(r Reader, token string, bytesRange int64, sea
 }
 
 func (p *Parser) mergeTrailer(trailer *Dictionary) error {
+	if p.trailer == nil {
+		// TODO: create trailer
+	}
 
+	for _, key := range []Name{KeySize, KeyRoot, KeyEncrypt, KeyInfo, KeyID} {
+		obj := trailer.Key(key)
+
+		if p.trailer.Key(key) == nil {
+			p.trailer.AddKey(key, obj)
+		}
+	}
 	panic("not implemented") // TODO: implement me
 }
 
@@ -445,7 +455,7 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 					obj.Encrypt = *p.encrypt
 
 					if p.encrypt != nil && obj.Dictionary != nil {
-						typeObj := obj.Dictionary.Key(NameKeyType)
+						typeObj := obj.Dictionary.Key(KeyType)
 
 						name, ok := typeObj.(Name)
 						if ok && name == NameXRef {
@@ -534,7 +544,7 @@ func (p *Parser) reset() {
 }
 
 func (p *Parser) documentID() (String, error) {
-	id := p.trailer.Dictionary.Key(NameKeyID)
+	id := p.trailer.Dictionary.Key(KeyID)
 	if id == nil {
 		return "", fmt.Errorf("get document ID: not found in trailer: %w", ErrInvalidEncryptionDict)
 	}
