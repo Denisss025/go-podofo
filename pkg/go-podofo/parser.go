@@ -1,6 +1,7 @@
 package podofo
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -375,7 +376,37 @@ func (p *Parser) isPDFFile(r Reader) (ok bool, err error) {
 }
 
 func (p *Parser) findTokenBackward(r Reader, token string, bytesRange int64, searchEnd int64) error {
-	panic("not implemented") // TODO: implement me
+	currpos, err := r.Seek(searchEnd, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("find token backward: %w", err)
+	}
+
+	searchSize := currpos
+	if currpos > bytesRange {
+		searchSize = bytesRange
+	}
+
+	_, err = r.Seek(-searchSize, io.SeekCurrent)
+	if err != nil {
+		return fmt.Errorf("find token backward: %w", err)
+	}
+
+	buffer := p.tokenizer.buffer[:searchSize]
+	// search backwards in the buffer in case the buffer contains null bytes
+	// because it is right after a stream (can't use strstr for this reason)
+
+	i := int64(bytes.LastIndex(buffer, []byte(token)))
+	if i <= 0 {
+		// TODO? if (i == 0) ???
+		return fmt.Errorf("find token backwards: %w", ErrInternalLogic)
+	}
+
+	_, err = r.Seek(searchEnd-(searchSize-i), io.SeekStart)
+	if err != nil {
+		err = fmt.Errorf("read token backwards: %w", err)
+	}
+
+	return err
 }
 
 func (p *Parser) mergeTrailer(trailer Object) error {
