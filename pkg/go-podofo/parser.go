@@ -440,8 +440,8 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 		entry := &p.entries[i]
 
 		if entry.Parsed {
-			switch entry.Type {
-			case XRefEntryTypeInUse:
+			switch entry := entry.Entry.(type) {
+			case XRefEntryInUse:
 				if entry.Offset > 0 {
 					ref := NewReference(i, entry.Generation)
 					obj, err := NewParserObject(r, entry.Offset,
@@ -475,12 +475,12 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 
 					p.objects.AddFreeObject(NewReference(i, FirstGeneration))
 				}
-			case XRefEntryTypeFree:
+			case XRefEntryFree:
 				if i > 0 {
 					p.objects.SafeAddFreeObject(NewReference(i, entry.Generation))
 				}
-			case XRefEntryTypeCompressed:
-				compressedObjects[entry.ObjectNum] = append(compressedObjects[entry.ObjectNum], i)
+			case XRefEntryCompressed:
+				compressedObjects[entry.ObjectNumber] = append(compressedObjects[entry.ObjectNumber], i)
 			default:
 				return fmt.Errorf("read object internal: %w", ErrInvalidEnumValue)
 			}
@@ -570,7 +570,7 @@ func (p *Parser) parseEncrypt(r Reader, obj Object) (err error) {
 			return fmt.Errorf("parse encrypt object: %w", ErrInvalidEncryptionDict)
 		}
 
-		parserObj, err := NewParserObject(r, p.entries[i].Offset)
+		parserObj, err := NewParserObject(r, p.entries[i].Entry.(XRefEntryInUse).Offset)
 		if err != nil {
 			return fmt.Errorf("parse encrypt object: %w", err)
 		}
