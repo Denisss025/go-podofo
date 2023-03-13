@@ -310,6 +310,28 @@ func (p *Parser) readXRefContents(r Reader, offset int64, atEnd bool) (err error
 }
 
 func (p *Parser) readXRefSubsection(r Reader, firstObject int64, objectCount int64) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("read xref subsection: %w", err)
+		}
+	}()
+
+	if firstObject < 0 {
+		return fmt.Errorf("%w: value object is negative", ErrValueOutOfRange)
+	}
+
+	if objectCount < 0 {
+		return fmt.Errorf("%w: object count is negative", ErrValueOutOfRange)
+	}
+
+	p.entries = pdf.ResizeSlice(p.entries, int(firstObject+objectCount))
+
+	// TODO?
+	// consume all whitespaces
+	//     char ch;
+	//     while (device.Peek(ch) && m_tokenizer.IsWhitespace(ch))
+	//         (void)device.ReadChar();
+
 	panic("not implemented") // TODO: implement me
 }
 
@@ -554,7 +576,41 @@ func (p *Parser) readCompressedObjectFromStream(objNo int, objects []int) error 
 }
 
 func (p *Parser) checkEOFMarker(r Reader) error {
-	panic("not implemented") // TODO: implement me
+	const (
+		EOFToken    = "%%EOF"
+		EOFTokenLen = len(EOFToken)
+	)
+
+	p.lastEOFOffset = 0
+
+	currentPos, err := r.Seek(-int64(EOFTokenLen), io.SeekEnd)
+	if err != nil {
+		return fmt.Errorf("check EOF: %w", err)
+	}
+
+	if p.IsStrictParsing() {
+		buf := make([]byte, EOFTokenLen)
+
+		n, err := r.Read(buf)
+		if err != nil {
+			return fmt.Errorf("check EOF: %w", err)
+		}
+
+		// TODO? error?
+		if n != EOFTokenLen {
+			return fmt.Errorf("check EOF: %w", ErrUnknown)
+		}
+
+		if !bytes.Equal(buf, []byte(EOFToken)) {
+			return fmt.Errorf("check EOF: %w", ErrNoEOFToken)
+		}
+	} else {
+		panic("not implemented") // TODO: implement me
+	}
+
+	p.lastEOFOffset = currentPos
+
+	return nil
 }
 
 func (p *Parser) reset() {
