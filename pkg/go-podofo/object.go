@@ -1,5 +1,7 @@
 package podofo
 
+import "io"
+
 type ObjectKind uint8
 
 const (
@@ -26,6 +28,8 @@ const (
 )
 
 type Object interface {
+	io.WriterTo
+
 	Kind() ObjectKind
 }
 

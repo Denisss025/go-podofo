@@ -1,3 +1,5 @@
 package podofo
 
-type Document struct{}
+type Document struct {
+	Objects []Object
+}

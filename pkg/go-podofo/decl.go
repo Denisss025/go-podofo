@@ -37,23 +37,6 @@ const (
 	PDFALevel4F
 )
 
-type PDFStringState uint8
-
-const (
-	// PDFStringStateRawBuffer is for an unvaluated
-	// raw buffer string.
-	PDFStringStateRawBuffer PDFStringState = iota
-	// PDFStringStateASCII is for both an ASCII
-	// and PDFDocEncoding charsets.
-	PDFStringStateASCII
-	// PDFStringStateDocEncoding is for strings
-	// that use the whole PDFDocEncoding charset.
-	PDFStringStateDocEncoding
-	// PDFStringStateUnicode is for strings that
-	// use the whole Unicode charset.
-	PDFStringStateUnicode
-)
-
 type EncodingMapType uint8
 
 const (

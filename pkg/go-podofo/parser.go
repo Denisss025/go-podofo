@@ -571,19 +571,19 @@ func (p *Parser) reset() {
 	p.incUpdatesCount = 0
 }
 
-func (p *Parser) documentID() (String, error) {
+func (p *Parser) documentID() (*String, error) {
 	id := p.trailer.Dictionary.Key(KeyID)
 	if id == nil {
-		return "", fmt.Errorf("get document ID: not found in trailer: %w", ErrInvalidEncryptionDict)
+		return nil, fmt.Errorf("get document ID: not found in trailer: %w", ErrInvalidEncryptionDict)
 	}
 
 	array, ok := id.(*Array)
 	if !ok {
-		return "", fmt.Errorf("get document ID: not an array: %w", ErrInvalidEncryptionDict)
+		return nil, fmt.Errorf("get document ID: not an array: %w", ErrInvalidEncryptionDict)
 	}
 
 	// TODO? check the type of the first object?
-	return array.Objects[0].(String), nil
+	return array.Objects[0].(*String), nil
 }
 
 func (p *Parser) updateDocumentVersion() error {
