@@ -354,7 +354,7 @@ func (p *Parser) readObjects(r Reader) (err error) {
 	}
 
 	encrypt := p.trailer.Dictionary.Key(KeyEncrypt)
-	if encrypt != nil && encrypt.Kind() != ObjectKindNull {
+	if encrypt != nil && encrypt.Kind() != pdf.ObjectKindNull {
 		p.encrypt, err = EncryptFromObject(encrypt)
 		if err != nil {
 			return fmt.Errorf("read objects: %w", err)
@@ -493,7 +493,7 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 			switch entry := entry.Entry.(type) {
 			case XRefEntryInUse:
 				if entry.Offset > 0 {
-					ref := NewReference(i, entry.Generation)
+					ref := pdf.NewReference(i, entry.Generation)
 					obj, err := NewParserObject(r, entry.Offset,
 						WithDocument(p.objects.Document()), WithReference(ref),
 						DelayedLoad(p.loadOnDemand))
@@ -523,11 +523,11 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 
 					// TODO? log?
 
-					p.objects.AddFreeObject(NewReference(i, FirstGeneration))
+					p.objects.AddFreeObject(pdf.NewReference(i, pdf.FirstGeneration))
 				}
 			case XRefEntryFree:
 				if i > 0 {
-					p.objects.SafeAddFreeObject(NewReference(i, entry.Generation))
+					p.objects.SafeAddFreeObject(pdf.NewReference(i, entry.Generation))
 				}
 			case XRefEntryCompressed:
 				compressedObjects[entry.ObjectNumber] = append(compressedObjects[entry.ObjectNumber], i)
@@ -535,7 +535,7 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 				return fmt.Errorf("read object internal: %w", ErrInvalidEnumValue)
 			}
 		} else if i > 0 { // unparsed
-			p.objects.AddFreeObject(NewReference(i, FirstGeneration))
+			p.objects.AddFreeObject(pdf.NewReference(i, pdf.FirstGeneration))
 		}
 		// the linked free list in the xref section is not always correct in pdf's
 		// (especially Illustrator) but Acrobat still accepts them. I've seen XRefs
@@ -639,7 +639,7 @@ func (p *Parser) documentID() (*String, error) {
 	}
 
 	// TODO? check the type of the first object?
-	return array.Objects[0].(*String), nil
+	return array.objects[0].(*String), nil
 }
 
 func (p *Parser) updateDocumentVersion() error {

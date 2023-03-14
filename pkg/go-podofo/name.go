@@ -1,8 +1,12 @@
 package podofo
 
-import "io"
+import (
+	"github.com/denisss025/go-podofo/internal/pdf"
+)
 
 type Name string
+
+// TODO: need to make Name an object
 
 const (
 	KeyNull     Name = ""
@@ -22,8 +26,8 @@ const (
 	NameXRef Name = "XRef"
 )
 
-func (name Name) Kind() ObjectKind { return ObjectKindName }
+func (name Name) Kind() ObjectKind { return pdf.ObjectKindName }
 
-func (name Name) WriteTo(w io.Writer) (n int64, err error) {
+func (name Name) MarshalPDF(w *pdf.Writer) error {
 	panic("not implemented") // TODO: implement me
 }

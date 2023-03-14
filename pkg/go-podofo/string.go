@@ -2,7 +2,8 @@ package podofo
 
 import (
 	"bytes"
-	"io"
+
+	"github.com/denisss025/go-podofo/internal/pdf"
 )
 
 type StringState uint8
@@ -37,6 +38,8 @@ type stringData struct {
 }
 
 type String struct {
+	pdf.BaseObject
+
 	data  *stringData
 	isHex bool
 }
@@ -52,7 +55,7 @@ func (s *String) isValidText() (bool, error) {
 	}
 }
 
-func (s *String) Kind() ObjectKind { return ObjectKindString }
+func (s *String) Kind() ObjectKind { return pdf.ObjectKindString }
 
 func (s *String) UnmarshalBinary(data []byte) error {
 	panic("not implemented") // TODO: Implement
@@ -69,7 +72,7 @@ func (s *String) unmarshalUTF8(text []byte) error {
 	panic("not implemented") // TODO: implement me
 }
 
-func (s *String) WriteTo(w io.Writer) (n int64, err error) {
+func (s *String) MarshalPDF(w *pdf.Writer) error {
 	panic("not implemented") // TODO: implement me
 }
 
@@ -86,6 +89,10 @@ func (s *String) String() string {
 }
 
 func (s *String) evaluateString() error {
+	panic("not implemented") // TODO: implement me
+}
+
+func (s *String) Copy() (Object, error) {
 	panic("not implemented") // TODO: implement me
 }
 

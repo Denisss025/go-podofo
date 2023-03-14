@@ -1,24 +1,34 @@
 package podofo
 
-import "io"
+import (
+	"github.com/denisss025/go-podofo/internal/pdf"
+)
 
 // Dictionary is the PDF Dictionary data type.
 type Dictionary struct {
+	pdf.BaseObject
+	// TODO? pdf.DataContainer?
+
 	keys map[Name]Object
 }
 
 // Kind returns the kind of the PDFObject.
 func (d *Dictionary) Kind() ObjectKind {
-	return ObjectKindDictionary
+	return pdf.ObjectKindDictionary
 }
 
-func (d *Dictionary) WriteTo(w io.Writer) (n int64, err error) {
+func (d *Dictionary) MarshalPDF(w *pdf.Writer) error {
 	panic("not implemented") // TODO: implement me
 }
 
 // AddKey adds key to the dictionary.
 func (d *Dictionary) AddKey(name Name, obj Object) {
+	// TODO? need copy?
 	d.keys[name] = obj
+}
+
+func (d *Dictionary) Copy() (Object, error) {
+	panic("not implemented") // TODO: implement me
 }
 
 // AddKeyIndirect adds key to the dictionary.

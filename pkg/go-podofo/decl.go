@@ -52,26 +52,6 @@ const (
 	EncodingMapTypeCMap
 )
 
-type WriteFlags uint16
-
-const (
-	WriteFlagsNone WriteFlags = 0
-	// WriteFlagsClean is used to created a PDF
-	// that is readable in a text editor, i.e.
-	// isert spaces and linebreaks between tokens.
-	WriteFlagsClean WriteFlags = 1
-	// WriteFlagsNoInlineLiteral is used to prevent writing spaces before literal types
-	// (numerical, references, null).
-	WriteFlagsNoInlineLiteral WriteFlags = 2
-	// WriteFlagsNoFlateCompress is used to write
-	// PDF with Flate compression.
-	WriteFlagsNoFlateCompress WriteFlags = 4
-	// WriteFlagsNoPDFAPreserve is used to write
-	// compact (WriteFlagsClean is unsed) code,
-	// preserving PDF/A compliance is not required.
-	WriteFlagsNoPDFAPreserve WriteFlags = 256
-)
-
 type TextExtractFlags uint8
 
 const (

@@ -1,12 +1,12 @@
-package podofo
-
-import "io"
+package pdf
 
 type Generation uint16
 
 const FirstGeneration Generation = 1
 
 type Reference struct {
+	BaseObject
+
 	objNo int
 	genNo Generation
 }
@@ -19,7 +19,11 @@ func (ref *Reference) Kind() ObjectKind {
 	return ObjectKindReference
 }
 
-func (ref *Reference) WriteTo(w io.Writer) (n int64, err error) {
+func (ref *Reference) Copy() (Object, error) {
+	panic("not implemented") // TODO: implement me
+}
+
+func (ref *Reference) MarshalPDF(w *Writer) error {
 	panic("not implemented") // TODO: implement me
 }
 
