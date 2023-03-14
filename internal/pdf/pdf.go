@@ -46,57 +46,27 @@ func IsWhitespace(r rune) bool {
 }
 
 func IndexLast(r io.ReadSeeker, what []byte) (pos int64, err error) {
-	const bufSize = 4096
-
-	savePos, _ := r.Seek(0, io.SeekCurrent)
-
-	pos, err = r.Seek(0, io.SeekEnd)
-	if err != nil {
-		return -1, fmt.Errorf("index last: %w", err)
-	}
-
-	var buf []byte
-
-	if pos > bufSize {
-		buf = make([]byte, bufSize)
-	} else {
-		buf = make([]byte, pos)
-	}
-
-	_, err = r.Seek(-int64(len(buf)), io.SeekEnd)
+	buf := make([]byte, len(what))
+	size, err := r.Seek(0, io.SeekEnd)
 	if err != nil {
 		return -1, fmt.Errorf("last index: %w", err)
 	}
 
-	for {
-		n, err := r.Read(buf)
+	for pos = size - int64(len(buf)); pos >= 0; pos-- {
+		_, err = r.Seek(pos, io.SeekStart)
 		if err != nil {
 			return -1, fmt.Errorf("last index: %w", err)
 		}
 
-		pos -= int64(n)
-
-		i := bytes.LastIndex(buf, what)
-		if i >= 0 {
-			pos += int64(i)
-
-			break
+		_, err = r.Read(buf)
+		if err != nil {
+			return -1, fmt.Errorf("last index: %w", err)
 		}
 
-		if pos == 0 {
-			pos--
-
-			break
-		}
-
-		if pos < bufSize {
-			buf = buf[:pos]
+		if bytes.Equal(buf, what) {
+			return pos, nil
 		}
 	}
 
-	if _, err = r.Seek(savePos, io.SeekStart); err != nil {
-		err = fmt.Errorf("index last: %w", err)
-	}
-
-	return pos, err
+	return -1, nil
 }
