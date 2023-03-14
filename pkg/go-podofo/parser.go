@@ -441,7 +441,13 @@ func (p *Parser) mergeTrailer(trailer *Dictionary) {
 		// TODO: create trailer
 	}
 
-	for _, key := range []Name{KeySize, KeyRoot, KeyEncrypt, KeyInfo, KeyID} {
+	for _, key := range []pdf.Name{
+		pdf.KeySize,
+		pdf.KeyRoot,
+		pdf.KeyEncrypt,
+		pdf.KeyInfo,
+		pdf.KeyID,
+	} {
 		obj := trailer.Key(key)
 
 		if p.trailer.Key(key) == nil {

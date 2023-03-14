@@ -73,5 +73,5 @@ func (c *Contents) writeTo(w *pdf.Writer, arr *Array) (err error) {
 // }
 
 func (c *Contents) reset() error {
-	return c.parent.Object().(*Dictionary).AddKeyIndirect(KeyContents, c.object)
+	return c.parent.Object().(*Dictionary).AddKeyIndirect(pdf.KeyContents, c.object)
 }
