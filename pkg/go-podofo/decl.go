@@ -195,23 +195,6 @@ const (
 	FontMatchBehaviorFlagMatchPostScriptName FontMatchBehaviorFlag = 2
 )
 
-type ColorSpace uint8
-
-const (
-	ColorSpaceUnknown ColorSpace = iota
-	ColorSpaceDeviceGray
-	ColorSpaceDeviceRGB
-	ColorSpaceDeviceCMYK
-	ColorSpaceCalGray
-	ColorSpaceCalRGB
-	ColorSpaceLab
-	ColorSpaceICCBased
-	ColorSpaceIndexed
-	ColorSpacePattern
-	ColorSpaceSeparation
-	ColorSpaceDeviceN
-)
-
 type PixelFormat uint8
 
 const (

@@ -14,7 +14,7 @@ var (
 	ErrFileNotFound              = fs.ErrNotExist
 	ErrInvalidDeviceOperation    = errors.New("invalid device operation")
 	ErrUnexpectedEOF             = io.ErrUnexpectedEOF
-	ErrValueOutOfRange           = errors.New("value out of range")
+	ErrValueOutOfRange           = pdf.ErrValueOutOfRange
 	ErrInternalLogic             = errors.New("internal logic")
 	ErrInvalidEnumValue          = errors.New("invalid enum value")
 	ErrBrokenFile                = errors.New("file is broken")
@@ -52,8 +52,8 @@ var (
 	ErrFlate                     = errors.New("flate")
 	ErrFreeType                  = errors.New("free type")
 	ErrSignature                 = errors.New("signature")
-	ErrCannotConvertColor        = errors.New("cannot convert color")
-	ErrNotImplemented            = errors.New("not implemented")
+	ErrCannotConvertColor        = pdf.ErrCannotConvertColor
+	ErrNotImplemented            = pdf.ErrNotImplemented
 	ErrDestinationAlreadyPresent = errors.New("destination already present")
 	ErrChangeOnImmutable         = errors.New("change on immutable")
 	ErrNotCompiled               = errors.New("not compiled")
