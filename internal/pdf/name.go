@@ -33,6 +33,7 @@ func (name *NameObject) Kind() ObjectKind { return ObjectKindName }
 func (name *NameObject) MarshalPDF(w *Writer) error {
 	panic("not implemented") // TODO: implement me
 }
+
 func (name *NameObject) SetParent(parent Object) {
 	panic("not implemented") // TODO: Implement
 }

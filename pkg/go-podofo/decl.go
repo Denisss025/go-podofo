@@ -1,13 +1,17 @@
 package podofo
 
+import "github.com/denisss025/go-podofo/internal/pdf"
+
 const (
 	// BufferSize is used for internal buffers.
 	BufferSize = 4096
 
 	// DefaultPDFVersion is the default PDF version
 	// used by new PDF documents.
-	DefaultPDFVersion = PDFVersion14
+	DefaultPDFVersion = pdf.Version14
 )
+
+type PDFVersion = pdf.Version
 
 // Matrix2D.
 //
