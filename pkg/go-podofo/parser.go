@@ -131,14 +131,10 @@ func (p *Parser) NumIncrementalUpdates() int {
 
 // Objects returns a reference to the sorted internal
 // objects list.
-func (p *Parser) Objects() *IndirectObjectList {
-	return p.objects
-}
+func (p *Parser) Objects() *IndirectObjectList { return p.objects }
 
 // PDFVersion returns the file format version of the PDF.
-func (p *Parser) PDFVersion() PDFVersion {
-	return p.pdfVersion
-}
+func (p *Parser) PDFVersion() PDFVersion { return p.pdfVersion }
 
 // LoadOnDemand returns true if the LoadOnDemand option
 // was applied for Parser.
@@ -376,23 +372,14 @@ func (p *Parser) isPDFFile(r Reader) (ok bool, err error) {
 		return ok, fmt.Errorf("read pdf header: %w", err)
 	}
 
-	buf := make([]byte, BufferSize)
+	buf := make([]byte, len(pdfStart)+versionLen)
 
-	n, err := r.Read(buf[:len(pdfStart)])
+	n, err := r.Read(buf)
 	if err != nil {
 		return ok, fmt.Errorf("read pdf header: %w", err)
 	}
 
-	if n != len(pdfStart) || pdfStart != string(buf[:len(pdfStart)]) {
-		return false, nil
-	}
-
-	n, err = r.Read(buf[:versionLen])
-	if err != nil {
-		return ok, fmt.Errorf("read pdf header: verion: %w", err)
-	}
-
-	if n != versionLen {
+	if n != len(buf) || !bytes.HasPrefix(buf, []byte(pdfStart)) {
 		return false, nil
 	}
 
