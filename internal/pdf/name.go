@@ -18,6 +18,11 @@ const (
 	KeySize     Name = "Size"
 	KeySubtype  Name = "Subtype"
 	KeyType     Name = "Type"
+	KeyMetadata Name = "Metadata"
+	KeyTreeRoot Name = "StructTreeRoot"
+	KeyMarkInfo Name = "MarkInfo"
+	KeyLang     Name = "Lang"
+	KeyPageMode Name = "PageMode"
 
 	NameXRef Name = "XRef"
 )

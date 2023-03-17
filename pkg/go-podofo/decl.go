@@ -300,31 +300,6 @@ const (
 	PageSizeTabloid
 )
 
-type PageMode uint8
-
-const (
-	PageModeDontCare PageMode = iota
-	PageModeUseNone
-	PageModeUseThumbs
-	PageModeUseBookmarks
-	PageModeFullScreen
-	PageModeUseOC
-	PageModeUseAttachments
-)
-
-type PageLayout uint8
-
-const (
-	PageLayoutIgnore PageLayout = iota
-	PageLayoutDefault
-	PageLayoutSinglePage
-	PageLayoutOneColumn
-	PageLayoutTwoColumnLeft
-	PageLayoutTwoColumnRight
-	PageLayoutTwoPageLeft
-	PageLayoutTwoPageRight
-)
-
 type Standard14FontType uint8
 
 const (
