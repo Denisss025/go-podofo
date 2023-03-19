@@ -3,6 +3,7 @@ package pdf
 import (
 	"errors"
 	"fmt"
+	"image/color"
 	"strconv"
 	"unicode"
 
@@ -33,38 +34,28 @@ type Color interface {
 	Validate() error
 }
 
-type GrayColor struct {
-	Value float64
-}
+type GrayColor color.Gray16
 
 func (gray GrayColor) ColorSpace() ColorSpace { return ColorSpaceDeviceGray }
 
-func (gray GrayColor) Validate() error {
-	const colorMax = 1.0
+func (gray GrayColor) Validate() error { return nil }
 
-	return checkRange(gray.Value, 0.0, colorMax)
+func (gray GrayColor) RGBA() (r, g, b, a uint32) {
+	return color.Gray16(gray).RGBA()
 }
 
 func (gray *GrayColor) UnmarshalText(text []byte) error {
 	panic("not implemented") // TODO: Implement
 }
 
-type RGBColor struct {
-	Red   float64
-	Green float64
-	Blue  float64
-}
+type RGBColor color.NRGBA64
 
 func (rgb RGBColor) ColorSpace() ColorSpace { return ColorSpaceDeviceRGB }
 
-func (rgb RGBColor) Validate() error {
-	const colorMax = 1.0
+func (rgb RGBColor) Validate() error { return nil }
 
-	return errors.Join(
-		checkRange(rgb.Red, 0.0, colorMax),
-		checkRange(rgb.Green, 0.0, colorMax),
-		checkRange(rgb.Blue, 0.0, colorMax),
-	)
+func (rgb RGBColor) RGBA() (r, g, b, a uint32) {
+	return color.NRGBA64(rgb).RGBA()
 }
 
 func (rgb *RGBColor) UnmarshalText(text []byte) error {
@@ -77,7 +68,8 @@ func (rgb *RGBColor) UnmarshalText(text []byte) error {
 		gshift = 8
 		bshift = 0
 
-		mask = 0xFF
+		mask      = 0xFF
+		maxUInt16 = 0xFFFF
 	)
 
 	if len(text) != rgbLen || text[0] != sharp {
@@ -89,31 +81,24 @@ func (rgb *RGBColor) UnmarshalText(text []byte) error {
 		return fmt.Errorf("unmarshal RGB color: %w", err)
 	}
 
-	rgb.Red = float64((n>>rshift)&mask) / float64(mask)
-	rgb.Green = float64((n>>gshift)&mask) / float64(mask)
-	rgb.Blue = float64((n>>bshift)&mask) / float64(mask)
+	rgb.R = uint16(uint64(
+		(n>>rshift)&mask) * uint64(maxUInt16) / uint64(mask))
+	rgb.G = uint16(uint64(
+		(n>>gshift)&mask) * uint64(maxUInt16) / uint64(mask))
+	rgb.B = uint16(uint64(
+		(n>>bshift)&mask) * uint64(maxUInt16) / uint64(mask))
 
 	return nil
 }
 
-type CMYKColor struct {
-	Cyan    float64
-	Magenta float64
-	Yellow  float64
-	Black   float64
-}
+type CMYKColor color.CMYK
 
 func (cmyk CMYKColor) ColorSpace() ColorSpace { return ColorSpaceDeviceCMYK }
 
-func (cmyk CMYKColor) Validate() error {
-	const colorMax = 1.0
+func (cmyk CMYKColor) Validate() error { return nil }
 
-	return errors.Join(
-		checkRange(cmyk.Cyan, 0.0, colorMax),
-		checkRange(cmyk.Magenta, 0.0, colorMax),
-		checkRange(cmyk.Yellow, 0.0, colorMax),
-		checkRange(cmyk.Black, 0.0, colorMax),
-	)
+func (cmyk CMYKColor) RGBA() (r, g, b, a uint32) {
+	return color.CMYK(cmyk).RGBA()
 }
 
 func (cmyk *CMYKColor) UnmarshalText(text []byte) error {
@@ -202,16 +187,19 @@ func SeparationColorNone() SeparationColor {
 }
 
 func SeparationColorAll() SeparationColor {
-	const color = 1.0
+	const (
+		maxUInt8 uint8   = 0xFF
+		density  float64 = 1.0
+	)
 
 	return SeparationColor{
 		Name:    "All",
-		Density: color,
+		Density: density,
 		AlternateColor: CMYKColor{
-			Cyan:    color,
-			Magenta: color,
-			Yellow:  color,
-			Black:   color,
+			C: maxUInt8,
+			M: maxUInt8,
+			Y: maxUInt8,
+			K: maxUInt8,
 		},
 	}
 }
@@ -224,29 +212,21 @@ func ColorFromObject(obj Object) (Color, error) {
 	panic("not implemented") // TODO: implement me
 }
 
-func ConvertToGrayScale(color Color) (gray GrayColor, err error) {
-	const (
-		rweight = 0.299
-		gweight = 0.587
-		bweignt = 0.114
-	)
-
-	switch color := color.(type) {
+func ConvertToGrayScale(inColor Color) (gray GrayColor, err error) {
+	switch c := inColor.(type) {
 	case GrayColor:
-		return color, nil
+		return c, nil
 	case RGBColor:
-		gray.Value = rweight*color.Red +
-			bweignt*color.Blue +
-			gweight*color.Green
+		gray = GrayColor(color.Gray16Model.Convert(c).(color.Gray16))
 	case CMYKColor:
-		rgb, err := ConvertToRGB(color)
+		rgb, err := ConvertToRGB(c)
 		if err != nil {
 			return gray, err
 		}
 
 		return ConvertToGrayScale(rgb)
 	case SeparationColor:
-		cmyk, ok := color.AlternateColor.(CMYKColor)
+		cmyk, ok := c.AlternateColor.(CMYKColor)
 		if !ok {
 			return gray, ErrNotImplemented
 		}
@@ -259,22 +239,16 @@ func ConvertToGrayScale(color Color) (gray GrayColor, err error) {
 	return gray, err
 }
 
-func ConvertToRGB(color Color) (rgb RGBColor, err error) {
-	const colorMax = 1.0
-
-	switch color := color.(type) {
+func ConvertToRGB(inColor Color) (rgb RGBColor, err error) {
+	switch c := inColor.(type) {
 	case RGBColor:
-		return color, nil
+		return c, nil
 	case GrayColor:
-		rgb.Red = color.Value
-		rgb.Blue = color.Value
-		rgb.Green = color.Value
+		rgb = RGBColor(color.NRGBA64Model.Convert(c).(color.NRGBA64))
 	case CMYKColor:
-		rgb.Red = (colorMax - color.Cyan) * (colorMax - color.Black)
-		rgb.Green = (colorMax - color.Magenta) * (colorMax - color.Black)
-		rgb.Blue = (colorMax - color.Yellow) * (colorMax - color.Black)
+		rgb = RGBColor(color.NRGBA64Model.Convert(c).(color.NRGBA64))
 	case SeparationColor:
-		cmyk, ok := color.AlternateColor.(CMYKColor)
+		cmyk, ok := c.AlternateColor.(CMYKColor)
 		if !ok {
 			return rgb, ErrNotImplemented
 		}
@@ -287,46 +261,19 @@ func ConvertToRGB(color Color) (rgb RGBColor, err error) {
 	return rgb, err
 }
 
-func ConvertToCMYK(color Color) (cmyk CMYKColor, err error) {
-	const colorMax = 1.0
-
-	switch color := color.(type) {
+func ConvertToCMYK(inColor Color) (cmyk CMYKColor, err error) {
+	switch c := inColor.(type) {
 	case CMYKColor:
-		return color, nil
+		return c, nil
 	case GrayColor:
-		cmyk.Cyan = 0.0
-		cmyk.Magenta = 0.0
-		cmyk.Yellow = 0.0
-		cmyk.Black = colorMax - color.Value
+		cmyk = CMYKColor(color.CMYKModel.Convert(c).(color.CMYK))
 	case RGBColor:
-		cmyk.Black = min(
-			colorMax-color.Red,
-			colorMax-color.Blue,
-			colorMax-color.Green,
-		)
-
-		if cmyk.Black < colorMax {
-			x := colorMax - cmyk.Black
-
-			cmyk.Cyan = (x - color.Red) / x
-			cmyk.Magenta = (x - color.Green) / x
-			cmyk.Yellow = (x - color.Blue) / x
-		}
+		cmyk = CMYKColor(color.CMYKModel.Convert(c).(color.CMYK))
 	default:
 		err = ErrCannotConvertColor
 	}
 
 	return cmyk, err
-}
-
-func min[N constraints.Ordered](a N, bcd ...N) N {
-	for _, b := range bcd {
-		if b < a {
-			a = b
-		}
-	}
-
-	return a
 }
 
 func checkRange[N constraints.Ordered](val, min, max N) error {

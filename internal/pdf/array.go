@@ -3,30 +3,30 @@ package pdf
 type Array struct{}
 
 // MarshalPDF encodes the receiver a PDF bytes.
-func (arr *Array) MarshalPDF(_ *pdf.Writer) error {
+func (arr *Array) MarshalPDF(_ *Writer) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) SetParent(_ pdf.Object) {
+func (arr *Array) SetParent(_ Object) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) Parent() pdf.Object {
+func (arr *Array) Parent() Object {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) Kind() pdf.ObjectKind {
+func (arr *Array) Kind() ObjectKind {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) Copy() (pdf.Object, error) {
+func (arr *Array) Copy() (Object, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) Document() *pdf.Document {
+func (arr *Array) Document() *Document {
 	panic("not implemented") // TODO: Implement
 }
 
-func (arr *Array) GetIndirectReference() *pdf.Reference {
+func (arr *Array) GetIndirectReference() *Reference {
 	panic("not implemented") // TODO: Implement
 }

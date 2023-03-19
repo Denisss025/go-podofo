@@ -3,31 +3,31 @@ package pdf
 type Dictionary struct{}
 
 // MarshalPDF encodes the receiver a PDF bytes.
-func (dict *Dictionary) MarshalPDF(_ *pdf.Writer) error {
+func (dict *Dictionary) MarshalPDF(_ *Writer) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) SetParent(_ pdf.Object) {
+func (dict *Dictionary) SetParent(_ Object) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) Parent() pdf.Object {
+func (dict *Dictionary) Parent() Object {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) Kind() pdf.ObjectKind {
+func (dict *Dictionary) Kind() ObjectKind {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) Copy() (pdf.Object, error) {
+func (dict *Dictionary) Copy() (Object, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) Document() *pdf.Document {
+func (dict *Dictionary) Document() *Document {
 	panic("not implemented") // TODO: Implement
 }
 
-func (dict *Dictionary) GetIndirectReference() *pdf.Reference {
+func (dict *Dictionary) GetIndirectReference() *Reference {
 	panic("not implemented") // TODO: Implement
 }
 

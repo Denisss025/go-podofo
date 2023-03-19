@@ -3,8 +3,9 @@ package pdf_test
 import (
 	"testing"
 
-	"github.com/denisss025/go-podofo/internal/pdf"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/denisss025/go-podofo/internal/pdf"
 )
 
 func TestRGBColorUnmarshalText(t *testing.T) {
@@ -25,18 +26,18 @@ func TestRGBColorUnmarshalText(t *testing.T) {
 			name: "white",
 			text: "#FFFFFF",
 			expect: pdf.RGBColor{
-				Red:   1.0,
-				Green: 1.0,
-				Blue:  1.0,
+				R: 0xFFFF,
+				G: 0xFFFF,
+				B: 0xFFFF,
 			},
 			wantErr: false,
 		}, {
 			name: "#fcba03",
 			text: "#fcba03",
 			expect: pdf.RGBColor{
-				Red:   252.0 / 255.0,
-				Green: 186.0 / 255.0,
-				Blue:  3.0 / 255.0,
+				R: uint16(uint64(252 * 0xFFFF / 255)),
+				G: uint16(uint64(186 * 0xFFFF / 255)),
+				B: uint16(uint64(3 * 0xFFFF / 255)),
 			},
 			wantErr: false,
 		}, {
@@ -71,12 +72,20 @@ func TestConvertToCMYK(t *testing.T) {
 	t.Parallel()
 
 	mapCmyk := func(cmyk pdf.CMYKColor) map[string]float64 {
+		const maxUInt8 = float64(uint8(0xFF))
+
 		return map[string]float64{
-			"cyan":    cmyk.Cyan,
-			"magenta": cmyk.Magenta,
-			"yellow":  cmyk.Yellow,
-			"black":   cmyk.Black,
+			"cyan":    float64(cmyk.C) / maxUInt8,
+			"magenta": float64(cmyk.M) / maxUInt8,
+			"yellow":  float64(cmyk.Y) / maxUInt8,
+			"black":   float64(cmyk.K) / maxUInt8,
 		}
+	}
+
+	toCmyk := func(v float64) uint8 {
+		const maxUInt8 = float64(uint8(0xFF))
+
+		return uint8(v * maxUInt8)
 	}
 
 	tests := []struct {
@@ -88,53 +97,54 @@ func TestConvertToCMYK(t *testing.T) {
 		{
 			name: "rgb2cmyk-#0ac77d",
 			color: pdf.RGBColor{
-				Red:   11.0 / 255.0,
-				Green: 200.0 / 255.0,
-				Blue:  127.0 / 255.0,
+				R: uint16(uint64(11 * 0xFFFF / 255)),
+				G: uint16(uint64(200 * 0xFFFF / 255)),
+				B: uint16(uint64(127 * 0xFFFF / 255)),
 			},
 			wantCmyk: pdf.CMYKColor{
-				Cyan:    0.95,
-				Magenta: 0.0,
-				Yellow:  0.37,
-				Black:   0.22,
+				C: toCmyk(0.95),
+				M: toCmyk(0.0),
+				Y: toCmyk(0.37),
+				K: toCmyk(0.22),
 			},
 			wantErr: false,
 		}, {
 			name: "rgb2cmyk-#2b00ff",
 			color: pdf.RGBColor{
-				Red:   43.0 / 255.0,
-				Green: 0.0,
-				Blue:  1.0,
+				R: uint16(uint64(43 * 0xFFFF / 255)),
+				G: 0,
+				B: 0xFFFF,
+				A: 0xFFFF,
 			},
 			wantCmyk: pdf.CMYKColor{
-				Cyan:    0.83,
-				Magenta: 1.0,
-				Yellow:  0.0,
-				Black:   0.0,
+				C: toCmyk(0.83),
+				M: toCmyk(1.0),
+				Y: toCmyk(0.0),
+				K: toCmyk(0.0),
 			},
 			wantErr: false,
 		}, {
 			name: "cmyk2cmyk",
 			color: pdf.CMYKColor{
-				Cyan:    0.1,
-				Magenta: 0.2,
-				Yellow:  0.3,
-				Black:   0.4,
+				C: toCmyk(0.1),
+				M: toCmyk(0.2),
+				Y: toCmyk(0.3),
+				K: toCmyk(0.4),
 			},
 			wantCmyk: pdf.CMYKColor{
-				Cyan:    0.1,
-				Magenta: 0.2,
-				Yellow:  0.3,
-				Black:   0.4,
+				C: toCmyk(0.1),
+				M: toCmyk(0.2),
+				Y: toCmyk(0.3),
+				K: toCmyk(0.4),
 			},
 			wantErr: false,
 		}, {
 			name: "gray2cmyk",
 			color: pdf.GrayColor{
-				Value: 55.0 / 255.0,
+				Y: uint16(uint64(55 * 0xFFFF / 255)),
 			},
 			wantCmyk: pdf.CMYKColor{
-				Black: 0.78,
+				K: toCmyk(0.78),
 			},
 			wantErr: false,
 		},
@@ -160,14 +170,18 @@ func TestConvertToCMYK(t *testing.T) {
 	t.Run("gray to RGB to CMYK", func(t *testing.T) {
 		t.Parallel()
 
-		gray := pdf.GrayColor{Value: float64(0xCC) / 255.00}
+		gray := pdf.GrayColor{
+			Y: uint16(uint64(0xCC * 0xFFFF / 255)),
+		}
+
 		expectRGB := pdf.RGBColor{
-			Red:   gray.Value,
-			Green: gray.Value,
-			Blue:  gray.Value,
+			R: gray.Y,
+			G: gray.Y,
+			B: gray.Y,
+			A: 0xFFFF,
 		}
 		expectCMYK := pdf.CMYKColor{
-			Black: 0.2,
+			K: toCmyk(0.2),
 		}
 
 		rgb, err := pdf.ConvertToRGB(gray)
