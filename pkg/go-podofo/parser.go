@@ -172,7 +172,7 @@ func (p *Parser) readDocumentStructure(r Reader) (err error) {
 	}
 
 	if p.trailer != nil && p.trailer.Dictionary != nil {
-		entriesCount := p.trailer.Dictionary.Int(KeySize, -1)
+		entriesCount := p.trailer.Dictionary.Int(pdf.KeySize, -1)
 
 		if entriesCount >= 0 && len(p.entries) > int(entriesCount) {
 			// Total number of xref entries to read is greater than the /Size
@@ -226,7 +226,7 @@ func (p *Parser) readXRefContents(r Reader, offset int64, atEnd bool) (err error
 	}
 
 	if string(token) != "xref" {
-		if p.pdfVersion < PDFVersion13 {
+		if p.pdfVersion < pdf.Version13 {
 			return fmt.Errorf("read xref contents: %w", ErrNoXRef)
 		}
 
@@ -349,7 +349,7 @@ func (p *Parser) readObjects(r Reader) (err error) {
 		return fmt.Errorf("read objects: %w", ErrNoTrailer)
 	}
 
-	encrypt := p.trailer.Dictionary.Key(KeyEncrypt)
+	encrypt := p.trailer.Dictionary.Key(pdf.KeyEncrypt)
 	if encrypt != nil && encrypt.Kind() != pdf.ObjectKindNull {
 		p.encrypt, err = EncryptFromObject(encrypt)
 		if err != nil {
@@ -498,10 +498,10 @@ func (p *Parser) readObjectsInternal(r Reader) error {
 					obj.Encrypt = *p.encrypt
 
 					if p.encrypt != nil && obj.Dictionary != nil {
-						typeObj := obj.Dictionary.Key(KeyType)
+						typeObj := obj.Dictionary.Key(pdf.KeyType)
 
-						name, ok := typeObj.(Name)
-						if ok && name == NameXRef {
+						name, ok := typeObj.(*pdf.NameObject)
+						if ok && name.Name == pdf.NameXRef {
 							// TODO: ignore broken objects
 							// XRef is never encrypted
 							panic("not implemented") // TODO: implement me
@@ -621,7 +621,7 @@ func (p *Parser) reset() {
 }
 
 func (p *Parser) documentID() (*String, error) {
-	id := p.trailer.Dictionary.Key(KeyID)
+	id := p.trailer.Dictionary.Key(pdf.KeyID)
 	if id == nil {
 		return nil, fmt.Errorf("get document ID: not found in trailer: %w", ErrInvalidEncryptionDict)
 	}

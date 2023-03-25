@@ -284,22 +284,6 @@ const (
 	SaveOptionClean
 )
 
-type PageSize uint8
-
-const (
-	PageSizeUnknown PageSize = iota
-	PageSizeA0
-	PageSizeA1
-	PageSizeA2
-	PageSizeA3
-	PageSizeA4
-	PageSizeA5
-	PageSizeA6
-	PageSizeLetter
-	PageSizeLegal
-	PageSizeTabloid
-)
-
 type Standard14FontType uint8
 
 const (
