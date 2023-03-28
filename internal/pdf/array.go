@@ -27,6 +27,10 @@ func (arr *Array) Document() *Document {
 	panic("not implemented") // TODO: Implement
 }
 
+func (arr *Array) Dictionary() *Dictionary {
+	panic("not implemented") // TODO: Implement
+}
+
 func (arr *Array) GetIndirectReference() *Reference {
 	panic("not implemented") // TODO: Implement
 }

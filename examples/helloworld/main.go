@@ -33,10 +33,11 @@ func helloWorld(filename string) error {
 	)
 
 	// TODO: add page
-	page := doc.AddPage(podofo.PageSizeA4)
+	page := doc.AddPage(podofo.PageSizeA4())
 
 	// TODO: painter ctor
-	painter := podofo.NewPainter(page)
+	painter := podofo.NewPainter()
+	painter.SetCanvas(page)
 
 	// TODO: search fonts
 	font := doc.FindFont("Arial")

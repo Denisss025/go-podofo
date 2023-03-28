@@ -7,6 +7,7 @@ type Name string
 const (
 	KeyNull     Name = ""
 	KeyContents Name = "Contents"
+	KeyCount    Name = "Count"
 	KeyEncrypt  Name = "Encrypt"
 	KeyFilter   Name = "Filter"
 	KeyFlags    Name = "Flags"

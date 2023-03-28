@@ -36,6 +36,7 @@ type Object interface {
 	Kind() ObjectKind
 	Copy() (Object, error)
 	Document() *Document
+	Dictionary() *Dictionary
 	GetIndirectReference() *Reference
 }
 

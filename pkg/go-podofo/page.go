@@ -1,6 +1,8 @@
 package podofo
 
-type Page struct{}
+type Page struct {
+	rect Rect
+}
 
 func (page *Page) Document() *Document {
 	panic("not implemented") // TODO: implement me
@@ -10,9 +12,7 @@ func (page *Page) Object() Object {
 	panic("not implemented") // TODO: implement me
 }
 
-func (page *Page) Rect() Rect {
-	panic("not implemented") // TODO: implement me
-}
+func (page *Page) Rect() Rect { return page.rect }
 
 type Pages struct{}
 
