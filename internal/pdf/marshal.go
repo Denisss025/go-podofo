@@ -63,9 +63,15 @@ func NewWriter(w io.Writer, options ...WriterOptionFunc) *Writer {
 	return wx
 }
 
-func (w *Writer) IsCleanWrite() bool { return w.flags&WriteFlagClean != 0 }
+func (w *Writer) HasFlag(flag WriteFlag) bool { return w.flags&flag != 0 }
+
+func (w *Writer) IsCleanWrite() bool { return w.HasFlag(WriteFlagClean) }
 
 func (w *Writer) Write(p []byte) (n int, err error) {
+	panic("not implemented") // TODO: implement me
+}
+
+func (w *Writer) WriteByte(x byte) (err error) {
 	panic("not implemented") // TODO: implement me
 }
 
